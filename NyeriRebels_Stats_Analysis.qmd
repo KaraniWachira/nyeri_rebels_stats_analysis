@@ -1,0 +1,119 @@
+---
+title: "NyeriRebels Stats Analysis"
+author: "Keith Karani"
+format: html
+editor: visual
+---
+
+### Introduction
+
+This dashboard provides an analysis of the Nyeri Rebels Men’s Softball team statistics from the JKUAT Series which is part of the Softball Kenya Federation League 2024/2025 season. The goal is to visualize player and team performance using key metrics such as batting averages, on-base plus slugging (OPS), earned run average (ERA), and fielding performance. The dataset is sourced from the official league scoring app.
+
+### Data loading and cleaning
+
+```{r echo=TRUE}
+library(tidyverse)
+library(here)
+
+
+data <- read_csv(here("data", "Dekut,MenStatsFall2024.csv"))
+
+head(data)
+View(data)
+```
+
+### **Exploratory Data Analysis (EDA)**
+
+-   Summary statistics
+
+-   Key insights from the data
+
+```{r}
+# Assign the 15th row as column names
+colnames(data) <- as.character(data[15,])
+
+# remove the glossary row 
+data <- data[-15,]
+
+
+# Resets row indices after removing the row.
+rownames(data) <- NULL
+
+
+glimpse(data)
+str(data)
+View(data)
+
+# Remove the first row from the data 
+data <- data[-1, ]
+
+# rename the first column name to "jersey_number"
+
+colnames(data)[1] <- "jersey_number"
+
+# renaming check
+colnames(data)
+
+# drop the jersey_number column to remain with only relevant columns to use
+data_clean <- data[,-1]
+
+colnames(data_clean)
+  
+# View clean data
+
+glimpse(data_clean)
+
+```
+
+Convert the relevant column to numerics
+
+```{r}
+
+# convert all columns to except the first two which represent the first and last name of the players
+
+data_clean |>
+  mutate(across(-c(1,2)), as.numeric)
+
+# check any duplicate names in the columns
+anyDuplicated(colnames(data_clean))
+
+str(data_clean)
+
+View(data_clean)
+
+```
+
+### Batting performance Analysis
+
+-   Batting Average
+
+    One of the oldest and most universal tools to measure a hitter's success at the plate, batting average is determined by dividing a player's hits by his total at-bats for a number between zero (shown as .000) and one (1.000)
+
+    ```{r}
+
+
+
+    ```
+
+-   On-base plus slugging(OPS)
+
+-   Hits vs At-Bats
+
+### Pitching Performance Analysis
+
+-   Earned Run Average (ERA) Comparison
+
+-   Strikeouts vs. Walks
+
+### Base running analysis
+
+-   stolen base success
+
+### Fielding performace Analysis
+
+-   Fielding errors vs assists
+
+### Data exports and future work
+
+-   saving cleaned data
+-   trend analysis, machine learning predictions
