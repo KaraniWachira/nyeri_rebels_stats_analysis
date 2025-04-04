@@ -14,6 +14,8 @@ This dashboard provides an analysis of the Nyeri Rebels Men’s Softball team st
 ```{r echo=TRUE}
 library(tidyverse)
 library(here)
+library(janitor)
+library(gganimate)
 
 
 data <- read_csv(here("data", "Dekut,MenStatsFall2024.csv"))
@@ -29,58 +31,55 @@ View(data)
 -   Key insights from the data
 
 ```{r}
-# Assign the 15th row as column names
-colnames(data) <- as.character(data[15,])
-
 # remove the glossary row 
 data <- data[-15,]
 
 
-# Resets row indices after removing the row.
-rownames(data) <- NULL
+# convert the first row into column names
+data_clean <- data |> 
+  janitor::row_to_names(row_number = 1)
 
 
-glimpse(data)
-str(data)
-View(data)
+# deduplicated column names
+names(data_clean) <- make.unique(names(data_clean), sep = "_")
 
-# Remove the first row from the data 
-data <- data[-1, ]
-
-# rename the first column name to "jersey_number"
-
-colnames(data)[1] <- "jersey_number"
-
-# renaming check
-colnames(data)
-
-# drop the jersey_number column to remain with only relevant columns to use
-data_clean <- data[,-1]
-
-colnames(data_clean)
-  
-# View clean data
-
-glimpse(data_clean)
+names(data_clean)
 
 ```
 
-Convert the relevant column to numerics
+Convert the relevant column to numeric
 
 ```{r}
 
-# convert all columns to except the first two which represent the first and last name of the players
+# convert all columns to except the first three which represent the first and last name of the players
 
-data_clean |>
-  mutate(across(-c(1,2)), as.numeric)
+rebels_cln <- data_clean |> 
+  mutate(
+    across(4:last_col(),
+           ~ as.numeric(.x))
+  )
 
-# check any duplicate names in the columns
-anyDuplicated(colnames(data_clean))
 
-str(data_clean)
+rebels_cln[13, "Team"] <- "Nyeri_Rebels" 
 
-View(data_clean)
+# Replace First Name and Last Name in the 13th row with the team name
 
+
+
+# Combine into a Single "Team/Player" Column and relocate the player name to be the first column
+rebels_combined <- rebels_cln %>%
+  mutate(
+    player_name = if_else(
+      row_number() == 13,
+      "Nyeri Rebels",
+      paste(First, Last)
+    )
+  ) %>%
+  select(-Number, -First, -Last) |> 
+  relocate(player_name)
+
+
+view(rebels_combined)
 ```
 
 ### Batting performance Analysis
@@ -91,11 +90,39 @@ View(data_clean)
 
     ```{r}
 
+    # sort players by avg
+
+    rebels_sorted <- rebels_combined |> 
+      arrange(desc(AVG))
+
+
+    # Batting average
+    ggplot(rebels_combined |> filter(row_number() !=13),
+      aes(x = AVG, y = reorder(player_name, AVG))) +
+      geom_col(fill = "steelblue") +
+      labs(
+        title = "Players batting average",
+        x = "Batting average (AVG)",
+        y = " Player Name",
+        caption = "@DiamondDigest"
+      ) +
+      theme_minimal() +
+      theme(axis.text.y = element_text(size = 8))
 
 
     ```
 
 -   On-base plus slugging(OPS)
+
+    OPS adds on-base percentage and slugging percentage to get one number that unites the two. It's meant to combine how well a hitter can reach base, with how well he can hit for average and for power.
+
+```{r}
+
+
+
+
+
+```
 
 -   Hits vs At-Bats
 
