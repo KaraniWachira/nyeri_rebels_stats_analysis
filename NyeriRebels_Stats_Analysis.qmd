@@ -15,7 +15,6 @@ This dashboard provides an analysis of the Nyeri Rebels Men’s Softball team st
 library(tidyverse)
 library(here)
 library(janitor)
-library(gganimate)
 
 
 data <- read_csv(here("data", "Dekut,MenStatsFall2024.csv"))
@@ -62,10 +61,6 @@ rebels_cln <- data_clean |>
 
 rebels_cln[13, "Team"] <- "Nyeri_Rebels" 
 
-# Replace First Name and Last Name in the 13th row with the team name
-
-
-
 # Combine into a Single "Team/Player" Column and relocate the player name to be the first column
 rebels_combined <- rebels_cln %>%
   mutate(
@@ -109,7 +104,6 @@ view(rebels_combined)
       theme_minimal() +
       theme(axis.text.y = element_text(size = 8))
 
-
     ```
 
 -   On-base plus slugging(OPS)
@@ -118,13 +112,107 @@ view(rebels_combined)
 
 ```{r}
 
+# seperate the team and player data
+team_ops <- rebels_combined |> 
+  filter(player_name == "Nyeri Rebels") |> 
+  pull(OPS)
+  
+
+# exclude team row
+player_data <- rebels_combined |> 
+  filter(player_name != "Nyeri Rebels")
 
 
-
+# plot
+ggplot(player_data, aes(x = reorder(player_name, OPS), y = OPS)) +
+  geom_col(aes(fill = OPS > team_ops), width = 0.7) +
+  #Team OPS
+  geom_hline(
+    yintercept = team_ops,
+    color = "#BD3039",
+    linewidth = 1.5,
+    linetype = "dashed"
+  ) +
+  
+  # Team OPS Label
+  annotate(
+    "text",
+    x = 1,
+    y = team_ops + 0.02,
+    label = paste("Team OPS:", round(team_ops, 3)),
+    color = "#BD3039",
+    hjust = 0,
+    fontface = "bold"
+  ) +
+   # Baseball-themed styling
+  scale_fill_manual(
+    values = c("FALSE" = "#0C2340", "TRUE" = "#FFD700"),  # Team colors
+    labels = c("Below Team", "Above Team")
+  ) +
+  labs(
+    title = "Player OPS vs. Team OPS",
+    x = "Player Name",
+    y = "On-Base Plus Slugging (OPS)",
+    caption = "@DiamondDigest",
+    fill = "Performance"
+  ) +
+  coord_flip() +  # Horizontal bars
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5, face = "bold", size = 16),
+    axis.text.y = element_text(size = 10),
+    legend.position = "top"
+  )
 
 ```
 
 -   Hits vs At-Bats
+
+    A hit occurs when a batter strikes the baseball into fair territory and reaches base without doing so via an error or a fielder's choice. There are four types of hits in baseball: singles, doubles, triples and home runs. All four are counted equally when deciphering batting average. If a player is thrown out attempting to take an extra base ( eg.. turning a single into a double), that still counts as a hit.
+
+    An official at-bat comes when a batter reaches base via a fielder's choice, hit or an error (not including catcher's interference) or when a batter is put out on a non-sacrifice. (Whereas a plate appearance refers to each completed turn batting, regardless of the result.)
+
+```{r}
+
+player_data <- rebels_combined |> 
+  filter(player_name != "Nyeri Rebels") |> 
+  select(player_name, H, AB) |> 
+  pivot_longer(
+    cols = c(H, AB),
+    names_to = "Metric",
+    values_to = "Value"
+  )
+
+# grouped bar chart
+ggplot(player_data, aes(x = reorder(player_name, Value), y = Value, fill = Metric)) +
+  geom_col(position = position_dodge(width = 0.8), width = 0.7) +
+  scale_fill_manual(values = c("H" = "#FFD700", "AB" = "steelblue")) +
+  labs(
+    title = "Hits vs At-Bats by PLayer",
+    x = "Player",
+    y = "Count",
+    fill = "Metric",
+    caption = "@Diamond Digest"
+  ) +
+  coord_flip() +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5, face = "bold", size = 16),
+    axis.text.y = element_text(size = 10),
+    legend.position = "bottom")
+  
+```
+
+-   On-base Percentage (OBP)
+
+    OBP refers to how frequently a batter reaches base per plate appearance. Times on base include hits, walks and hit-by-pitches, but do not include errors, times reached on a fielder's choice or a dropped third strike. (Separately, sacrifice bunts are removed from the equation entirely, because it is rarely a hitter's decision to sacrifice himself, but rather a manager's choice as part of an in-game strategy.)
+
+    ```{r}
+
+
+
+
+    ```
 
 ### Pitching Performance Analysis
 
